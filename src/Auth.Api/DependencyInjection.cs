@@ -2,8 +2,10 @@ using Auth.Data.Configuration;
 using Auth.Data.Context;
 using Auth.Data.Repositories;
 using Auth.Domain.Entities.Auth;
+using Auth.Domain.Interfaces;
 using Auth.Services;
 using Auth.Services.MapperProfile;
+using Auth.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +16,14 @@ public static class DependencyInjection
 {
     public static void ConfigureServices(this IServiceCollection services, IConfiguration configuration)
     {
-
-
         services.AddAutoMapper(typeof(MapperProfile));
+
         services.AddTransient<AuthService>();
-        services.AddTransient<UserRepository>();
+        services.AddTransient<TokenService>();
+
+        services.AddTransient<IUserRepository, UserRepository>();
+        services.AddTransient<ITokenRepository, TokenRepository>();
+
         services.AddTransient<UserManager<ApplicationUser>>();
 
         services.AddIdentity<ApplicationUser, ApplicationRole>(o => o.SignIn.RequireConfirmedAccount = true)

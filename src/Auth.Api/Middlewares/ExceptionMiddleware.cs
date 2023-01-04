@@ -60,6 +60,15 @@ namespace Auth.Api.Middlewares
                     };
                     break;
 
+                case UserNotFoundException responseException:
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    error = new ApiExceptionResponse()
+                    {
+                        Reason = context.Response.StatusCode.ToString(),
+                        Message = responseException.Message
+                    };
+                    break;                    
+
                 default:
                     context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     error = new ApiExceptionResponse()

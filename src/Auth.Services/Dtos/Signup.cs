@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Auth.Services.Dtos
 {
-    public class User
+    public class Signup
     {
         public Guid UserId { get; set; }
         [Required]
