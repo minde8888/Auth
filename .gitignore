@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 #Data base
 /database-data
+
+#Migration
+/Migration
