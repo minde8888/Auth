@@ -1,6 +1,5 @@
 using Auth.Domain.Entities;
 using Auth.Services;
-using Auth.Services.Dtos;
 using Auth.Services.Dtos.Auth;
 using Auth.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

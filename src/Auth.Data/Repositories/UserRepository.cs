@@ -22,7 +22,7 @@ namespace Auth.Data.Repositories
 
         public async Task<T> GetUser<T>(Guid id) where T : BaseEntity
         {
-            return await _context.Set<T>().Where(x => x.Id == id).FirstOrDefaultAsync();
+            return await _context.Set<T>().Where(x => x.Id == id).FirstOrDefaultAsync();         
         }
     }
 }

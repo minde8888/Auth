@@ -1,5 +1,4 @@
 ﻿using Auth.Domain.Entities;
-using Auth.Services.Dtos;
 using AutoMapper;
 
 namespace Auth.Services.MapperProfile

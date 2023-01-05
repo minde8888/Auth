@@ -4,11 +4,14 @@ using Auth.Data.Repositories;
 using Auth.Domain.Entities.Auth;
 using Auth.Domain.Interfaces;
 using Auth.Services;
+using Auth.Services.Dtos.Auth;
 using Auth.Services.MapperProfile;
 using Auth.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -30,7 +33,26 @@ public static class DependencyInjection
          .AddRoles<ApplicationRole>()
          .AddRoleManager<RoleManager<ApplicationRole>>()
          .AddEntityFrameworkStores<AppDbContext>()
-         .AddDefaultTokenProviders();
+        .AddDefaultTokenProviders();
+
+        services.Configure<JwtConfig>(configuration.GetSection("JwtConfig"));
+
+        var tokenValidationParameters = new TokenValidationParameters()
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration["JwtConfig:Secret"])),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
+            ValidIssuer = configuration["JwtConfig:Issuer"],
+            ValidAudience = configuration["JwtConfig:Audience"],
+
+            // Allow to use seconds for expiration of token
+            // Required only when token lifetime less than 5 minutes
+            // THIS ONE
+            ClockSkew = TimeSpan.Zero,
+        };
 
         services.AddAuthentication(options =>
         {
@@ -41,23 +63,10 @@ public static class DependencyInjection
         .AddJwtBearer(jwt =>
         {
             jwt.SaveToken = true;
-            jwt.TokenValidationParameters = new TokenValidationParameters()
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration["JwtConfig:Secret"])),
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateLifetime = true,
-                RequireExpirationTime = true,
-                //ValidIssuer = configuration["JwtConfig:Issuer"],
-                //ValidAudience = configuration["JwtConfig:Audience"],
-
-                // Allow to use seconds for expiration of token
-                // Required only when token lifetime less than 5 minutes
-                // THIS ONE
-                ClockSkew = TimeSpan.Zero,
-            };
+            jwt.TokenValidationParameters = tokenValidationParameters;
         });
+
+        services.AddSingleton(tokenValidationParameters);
 
         var connectionString = Environment.GetEnvironmentVariable("DockerCommandsConnectionString");
         services.AddDbContext<AppDbContext>(options =>

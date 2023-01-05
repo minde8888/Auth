@@ -3,7 +3,6 @@ using Auth.Domain.Entities;
 using Auth.Domain.Entities.Auth;
 using Auth.Domain.Exceptions;
 using Auth.Domain.Interfaces;
-using Auth.Services.Dtos;
 using Auth.Services.Services;
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;

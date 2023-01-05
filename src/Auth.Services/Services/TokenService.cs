@@ -54,6 +54,7 @@ namespace Auth.Services.Services
                 roleClaims.Add(new Claim(ClaimTypes.Role, role));
             });
 
+            var a = _jwtConfig.Issuer;
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
             var key = Encoding.ASCII.GetBytes(_jwtConfig.Secret);
