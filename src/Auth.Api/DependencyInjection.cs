@@ -4,14 +4,11 @@ using Auth.Data.Repositories;
 using Auth.Domain.Entities.Auth;
 using Auth.Domain.Interfaces;
 using Auth.Services;
-using Auth.Services.Dtos.Auth;
 using Auth.Services.MapperProfile;
 using Auth.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -47,10 +44,6 @@ public static class DependencyInjection
             RequireExpirationTime = true,
             ValidIssuer = configuration["JwtConfig:Issuer"],
             ValidAudience = configuration["JwtConfig:Audience"],
-
-            // Allow to use seconds for expiration of token
-            // Required only when token lifetime less than 5 minutes
-            // THIS ONE
             ClockSkew = TimeSpan.Zero,
         };
 

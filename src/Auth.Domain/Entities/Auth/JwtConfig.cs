@@ -1,4 +1,4 @@
-﻿namespace Auth.Services.Dtos.Auth
+﻿namespace Auth.Domain.Entities.Auth
 {
     public class JwtConfig
     {

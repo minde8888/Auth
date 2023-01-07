@@ -1,4 +1,5 @@
 ﻿using Auth.Domain.Entities;
+using Auth.Services.Dtos;
 using AutoMapper;
 
 namespace Auth.Services.MapperProfile
@@ -8,6 +9,7 @@ namespace Auth.Services.MapperProfile
         public MapperProfile()
         {
             CreateMap<SuperAdmin, Signup>().ReverseMap();
+            CreateMap<SuperAdmin, User>().ReverseMap();
         }
     }
 }

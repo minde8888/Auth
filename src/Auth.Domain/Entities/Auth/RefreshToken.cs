@@ -5,15 +5,15 @@ namespace Auth.Domain.Entities.Auth
     public class RefreshToken
     {
         public int Id { get; set; }
-        public Guid UserId { get; set; } // Linked to the AspNet Identity User Id
+        public Guid UserId { get; set; }
         public string Token { get; set; }
         public DateTime Expires { get; set; }
         public bool IsExpired => DateTime.UtcNow >= Expires;
-        public string JwtId { get; set; } // Map the token with jwtIdF
-        public bool IsUsed { get; set; } // if its used we don't want generate a new Jwt token with the same refresh token
-        public bool IsRevoked { get; set; } // if it has been revoke for security reasons
+        public string JwtId { get; set; }
+        public bool IsUsed { get; set; } 
+        public bool IsRevoked { get; set; } 
         public DateTime AddedDate { get; set; }
-        public DateTime ExpiryDate { get; set; } // Refresh token is long lived it could last for months.
+        public DateTime ExpiryDate { get; set; } 
 
         [ForeignKey(nameof(UserId))]
         public ApplicationUser ApplicationUser { get; set; }
