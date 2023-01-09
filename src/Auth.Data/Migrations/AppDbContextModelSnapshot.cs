@@ -174,7 +174,7 @@ namespace Auth.Data.Migrations
                     b.Property<DateTime?>("Revoked")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("Token")
+                    b.Property<string>("RequestToken")
                         .HasColumnType("text");
 
                     b.Property<Guid>("UserId")

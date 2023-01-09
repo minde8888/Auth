@@ -1,9 +1,12 @@
 using Auth.Domain.Entities;
+using Auth.Domain.Entities.Auth;
 using Auth.Services;
+using Auth.Services.Dtos;
 using Auth.Services.Dtos.Auth;
 using Auth.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -26,7 +29,7 @@ namespace Auth.Api.Controllers
         {
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-            _tokenValidationParams = tokenValidationParams ?? throw new ArgumentNullException(nameof(tokenValidationParams)); 
+            _tokenValidationParams = tokenValidationParams ?? throw new ArgumentNullException(nameof(tokenValidationParams));
         }
 
         [AllowAnonymous]
@@ -60,6 +63,15 @@ namespace Auth.Api.Controllers
             _tokenValidationParams.ValidateLifetime = true;
             var response = await _tokenService.VerifyToken(tokenRequest, principal, validatedToken);
 
+            return Ok(response);
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuth googleAuth)
+        {
+            var response = await _tokenService.GetGoogleTokenAsync(googleAuth);
             return Ok(response);
         }
     }

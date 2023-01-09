@@ -1,11 +1,15 @@
 using Auth.Data.Configuration;
 using Auth.Data.Context;
 using Auth.Data.Repositories;
+using Auth.Domain.Entities;
 using Auth.Domain.Entities.Auth;
 using Auth.Domain.Interfaces;
 using Auth.Services;
 using Auth.Services.MapperProfile;
 using Auth.Services.Services;
+using Auth.Services.Validators;
+using FluentValidation;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +29,9 @@ public static class DependencyInjection
         services.AddTransient<ITokenRepository, TokenRepository>();
 
         services.AddTransient<UserManager<ApplicationUser>>();
+
+        services.AddTransient<GoogleTokenValidator>();
+        services.AddTransient<IValidator<Signup>, SignupValidator>();
 
         services.AddIdentity<ApplicationUser, ApplicationRole>(o => o.SignIn.RequireConfirmedAccount = true)
          .AddRoles<ApplicationRole>()
@@ -57,6 +64,12 @@ public static class DependencyInjection
         {
             jwt.SaveToken = true;
             jwt.TokenValidationParameters = tokenValidationParameters;
+        })
+        .AddGoogle(options =>
+        {
+            options.ClientId = configuration["Authentication:Google:ClientId"];
+            options.ClientSecret = configuration["Authentication:Google:ClientSecret"];
+            options.SignInScheme = IdentityConstants.ExternalScheme;
         });
 
         services.AddSingleton(tokenValidationParameters);

@@ -1,8 +1,11 @@
 ﻿using Auth.Domain.Entities.Auth;
+using Auth.Domain.Exceptions;
 using Auth.Domain.Interfaces;
 using Auth.Services.Dtos.Auth;
+using Auth.Services.Validators;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,16 +19,18 @@ namespace Auth.Services.Services
         private readonly ITokenRepository _tokenRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly JwtConfig _jwtConfig;
+        private readonly GoogleTokenValidator _googleTokenValidator;
 
         public TokenService
             (ITokenRepository tokenRepository,
             UserManager<ApplicationUser> userManager,
-            IOptionsMonitor<JwtConfig> jwtConfig)
+            IOptionsMonitor<JwtConfig> jwtConfig,
+            GoogleTokenValidator googleTokenValidator)
         {
-
-            _jwtConfig = jwtConfig.CurrentValue;
+             _jwtConfig = jwtConfig.CurrentValue;
             _tokenRepository = tokenRepository ?? throw new ArgumentNullException(nameof(tokenRepository));
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+            _googleTokenValidator = googleTokenValidator;
         }
 
         public RefreshToken GetRefreshToken(SecurityToken token, string rand, ApplicationUser user)
@@ -54,7 +59,6 @@ namespace Auth.Services.Services
                 roleClaims.Add(new Claim(ClaimTypes.Role, role));
             });
 
-            var a = _jwtConfig.Issuer;
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
             var key = Encoding.ASCII.GetBytes(_jwtConfig.Secret);
@@ -91,80 +95,11 @@ namespace Auth.Services.Services
 
         public async Task<AuthResult> VerifyToken(RequestToken tokenRequest, ClaimsPrincipal principal, SecurityToken validatedToken)
         {
-            if (validatedToken is JwtSecurityToken jwtSecurityToken)
-            {
-                var result = jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase);
-
-                if (result == false)
-                {
-                    return null;
-                }
-            }
-
-            var utcExpiryDate = long.Parse(principal.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
-
-            var expDate = UnixTimeStampToDateTime(utcExpiryDate);
-
-            if (expDate < DateTime.UtcNow)
-            {
-                return new AuthResult()
-                {
-                    Errors = new List<string>() { "We cannot refresh this since the token has not expired" },
-                    Success = false
-                };
-            }
-
             var storedRefreshToken = await _tokenRepository.GetToken(tokenRequest.RefreshToken);
 
-            if (storedRefreshToken == null)
-            {
-                return new AuthResult()
-                {
-                    Errors = new List<string>() { "refresh token doesn't exist" },
-                    Success = false
-                };
-            }
-
-            if (DateTime.UtcNow > storedRefreshToken.ExpiryDate)
-            {
-                return new AuthResult()
-                {
-                    Errors = new List<string>() { "token has expired, user needs to reloading" },
-                    Success = false
-                };
-            }
-
-            if (storedRefreshToken.IsUsed)
-            {
-                return new AuthResult()
-                {
-                    Errors = new List<string>() { "token has been used" },
-                    Success = false
-                };
-            }
-
-            if (storedRefreshToken.IsRevoked)
-            {
-                return new AuthResult()
-                {
-                    Errors = new List<string>() { "token has been revoked" },
-                    Success = false
-                };
-            }
-
-            var jti = principal.Claims.SingleOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
-
-            if (storedRefreshToken.JwtId != jti)
-            {
-                return new AuthResult()
-                {
-                    Errors = new List<string>() { "the token doesn't match the saved token" },
-                    Success = false
-                };
-            }
+             _googleTokenValidator.TokenValidatorAsync(principal, validatedToken, storedRefreshToken);
 
             storedRefreshToken.IsUsed = true;
-
             await _tokenRepository.Update(storedRefreshToken);
 
             var dbUser = await _userManager.FindByIdAsync(storedRefreshToken.UserId.ToString());
@@ -180,11 +115,21 @@ namespace Auth.Services.Services
             .Select(s => s[rnd.Next(s.Length)]).ToArray());
         }
 
-        private DateTime UnixTimeStampToDateTime(double unixTimeStamp)
+        public async Task<AuthResult> GetGoogleTokenAsync(GoogleAuth googleAuth)
         {
-            DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToUniversalTime();
-            return dtDateTime;
+            var payload = _googleTokenValidator.VerifyGoogleToken(googleAuth).Result;
+            if (payload == null)
+                throw new GoogleAuthException();
+
+            var info = new UserLoginInfo(googleAuth.Provider, payload.Subject, googleAuth.Provider);
+            var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+            if (user == null)
+                throw new GoogleAuthException();
+
+            var result = await GenerateJwtTokenAsync(user);
+            return result;
         }
+
     }
 }
+
