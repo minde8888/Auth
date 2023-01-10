@@ -1,11 +1,11 @@
-﻿using Auth.Data.Repositories;
-using Auth.Domain.Entities;
+﻿using Auth.Domain.Entities;
 using Auth.Domain.Entities.Auth;
 using Auth.Domain.Exceptions;
 using Auth.Domain.Interfaces;
 using Auth.Services.Dtos;
 using Auth.Services.Services;
 using AutoMapper;
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 
 namespace Auth.Services
@@ -16,20 +16,40 @@ namespace Auth.Services
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
         private readonly TokenService _tokenService;
+        private readonly IValidator<Signup> _signupValidator;
+        private readonly IValidator<Login> _loginValidator;
 
         public AuthService(IMapper mapper,
             IUserRepository userRepository,
             UserManager<ApplicationUser> userManager,
-            TokenService tokenService)
+            TokenService tokenService,
+            IValidator<Signup> signupValidator,
+            IValidator<Login> loginValidator)
         {
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+            _signupValidator = signupValidator ?? throw new ArgumentNullException(nameof(signupValidator));
+            _loginValidator = loginValidator ?? throw new ArgumentException(nameof(loginValidator));
         }
 
         public async Task<SignupResponse> CreateUserAsync(Signup user)
         {
+            var validationResult = await _signupValidator.ValidateAsync(user);
+            if (!validationResult.IsValid)
+            {
+                var errorList = new List<string>();
+                foreach (var error in validationResult.Errors)
+                {
+                    errorList.Add(error.ErrorMessage);
+                }
+                return new SignupResponse()
+                {
+                    Errors = errorList,
+                    Success = false
+                };
+            };
             var exist = _userManager.Users.Any(u =>
                 u.PhoneNumber == user.PhoneNumber ||
                 u.Email == user.Email);
@@ -86,70 +106,79 @@ namespace Auth.Services
 
         public async Task<LoginResult> GetUserAsync(Login login, string imageSrc)
         {
-            ApplicationUser user = await _userManager.FindByEmailAsync(login.Email);
-
-            if (user == null)
+            var validationResult = await _loginValidator.ValidateAsync(login);
+            if (validationResult.IsValid)
             {
-                return new LoginResult()
+                ApplicationUser user = await _userManager.FindByEmailAsync(login.Email);
+
+                if (user == null)
                 {
-                    Errors = new List<string>() {
+                    return new LoginResult()
+                    {
+                        Errors = new List<string>() {
                                 "The email address is incorrect. Please retry."
                             },
-                    Success = false
-                };
-            }
-            if (user.IsDeleted)
-            {
-                return new LoginResult()
+                        Success = false
+                    };
+                }
+                if (user.IsDeleted)
                 {
-                    Errors = new List<string>() {
+                    return new LoginResult()
+                    {
+                        Errors = new List<string>() {
                                 "Signup account was deleted take contact with support"
                             },
-                    Success = false
-                };
-            }
+                        Success = false
+                    };
+                }
 
-            var isCorrect = await _userManager.CheckPasswordAsync(user, login.Password);
+                var isCorrect = await _userManager.CheckPasswordAsync(user, login.Password);
 
-            if (!isCorrect)
-            {
-                return new LoginResult()
+                if (!isCorrect)
                 {
-                    Errors = new List<string>() {
+                    return new LoginResult()
+                    {
+                        Errors = new List<string>() {
                                 "The password is incorrect. Please try again."
                             },
-                    Success = false
-                };
-            }
+                        Success = false
+                    };
+                }
 
-            var token = await _tokenService.GenerateJwtTokenAsync(user);
+                var token = await _tokenService.GenerateJwtTokenAsync(user);
 
-            var roles = await _userManager.GetRolesAsync(user);
+                var roles = await _userManager.GetRolesAsync(user);
 
-            foreach (var role in roles)
-            {
-                switch (role)
+                foreach (var role in roles)
                 {
-                    case "SuperAdmin":
-                        var superAdmin = await _userRepository.GetUser<SuperAdmin>(user.Id);
-                        if (superAdmin == null)
-                            throw new UserNotFoundException();
+                    switch (role)
+                    {
+                        case "SuperAdmin":
+                            var superAdmin = await _userRepository.GetUser<SuperAdmin>(user.Id);
+                            if (superAdmin == null)
+                                throw new UserNotFoundException();
 
-                        return new LoginResult()
-                        {
-                            Token = token.Token,
-                            RefreshToken = token.RefreshToken,
-                            Success = true,
-                            User = _mapper.Map<User>(superAdmin)
-                        };
-                    default:
-                        throw new RoleNotExistException();
-                };
+                            return new LoginResult()
+                            {
+                                Token = token.Token,
+                                RefreshToken = token.RefreshToken,
+                                Success = true,
+                                User = _mapper.Map<User>(superAdmin)
+                            };
+                        default:
+                            throw new RoleNotExistException();
+                    };
+                }
             }
-
-            return new LoginResult()//validation error
+            var errorList = new List<string>();
+            foreach (var error in validationResult.Errors)
             {
-                Errors = new List<string>(),
+                errorList.Add(error.ErrorMessage);
+            }
+            return new LoginResult()
+            {
+                Errors = errorList,
+                Success = false
             };
         }
     }

@@ -67,7 +67,16 @@ namespace Auth.Api.Middlewares
                         Reason = context.Response.StatusCode.ToString(),
                         Message = responseException.Message
                     };
-                    break;                    
+                    break;
+
+                case GoogleAuthException badRequestException:
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    error = new ApiExceptionResponse()
+                    {
+                        Reason = context.Response.StatusCode.ToString(),
+                        Message = badRequestException.Message
+                    };
+                    break;
 
                 default:
                     context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;

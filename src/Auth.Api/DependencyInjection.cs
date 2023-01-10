@@ -5,6 +5,7 @@ using Auth.Domain.Entities;
 using Auth.Domain.Entities.Auth;
 using Auth.Domain.Interfaces;
 using Auth.Services;
+using Auth.Services.Dtos.Auth;
 using Auth.Services.MapperProfile;
 using Auth.Services.Services;
 using Auth.Services.Validators;
@@ -32,6 +33,7 @@ public static class DependencyInjection
 
         services.AddTransient<GoogleTokenValidator>();
         services.AddTransient<IValidator<Signup>, SignupValidator>();
+        services.AddTransient<IValidator<RequestToken>, RequestTokenValidator>();
 
         services.AddIdentity<ApplicationUser, ApplicationRole>(o => o.SignIn.RequireConfirmedAccount = true)
          .AddRoles<ApplicationRole>()
