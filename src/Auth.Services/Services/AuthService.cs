@@ -4,32 +4,34 @@ using Auth.Domain.Exceptions;
 using Auth.Domain.Interfaces;
 using Auth.Services.Dtos;
 using Auth.Services.Services;
+using Auth.Services.WrapServices;
 using AutoMapper;
 using FluentValidation;
-using Microsoft.AspNetCore.Identity;
 
 namespace Auth.Services
 {
     public class AuthService
     {
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IAuthApi _authApi;
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
         private readonly TokenService _tokenService;
+
         private readonly IValidator<Signup> _signupValidator;
         private readonly IValidator<Login> _loginValidator;
 
-        public AuthService(IMapper mapper,
+        public AuthService(IAuthApi authApi,
+            IMapper mapper,
             IUserRepository userRepository,
-            UserManager<ApplicationUser> userManager,
             TokenService tokenService,
             IValidator<Signup> signupValidator,
             IValidator<Login> loginValidator)
         {
+            _authApi = authApi ?? throw new ArgumentNullException(nameof(authApi));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-            _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+
             _signupValidator = signupValidator ?? throw new ArgumentNullException(nameof(signupValidator));
             _loginValidator = loginValidator ?? throw new ArgumentException(nameof(loginValidator));
         }
@@ -50,9 +52,8 @@ namespace Auth.Services
                     Success = false
                 };
             };
-            var exist = _userManager.Users.Any(u =>
-                u.PhoneNumber == user.PhoneNumber ||
-                u.Email == user.Email);
+
+            var exist = _authApi.UserExisitAsync(user.PhoneNumber, user.Email);
 
             if (exist)
                 throw new UserExistException();
@@ -65,12 +66,13 @@ namespace Auth.Services
                 PhoneNumber = user.PhoneNumber
             };
 
-            var isCreated = await _userManager.CreateAsync(newUser, user.Password);
+            var isCreated = await _authApi.CreateUserAsync(newUser, user.Password);
+
             var result = new SignupResponse();
 
             if (isCreated.Succeeded)
             {
-                await _userManager.AddToRoleAsync(newUser, user.Roles);
+                await _authApi.AddRoleAsync(newUser, user.Roles);
 
                 user.UserId = newUser.Id;
 
@@ -109,14 +111,14 @@ namespace Auth.Services
             var validationResult = await _loginValidator.ValidateAsync(login);
             if (validationResult.IsValid)
             {
-                ApplicationUser user = await _userManager.FindByEmailAsync(login.Email);
+                ApplicationUser user = await _authApi.GetUserAsync(login.Email);
 
-                if (user == null)
+                if (user == null || user.IsDeleted)
                 {
                     return new LoginResult()
                     {
                         Errors = new List<string>() {
-                                "The email address is incorrect. Please retry."
+                                "The email address is incorrect. Please retry."//throw
                             },
                         Success = false
                     };
@@ -132,22 +134,22 @@ namespace Auth.Services
                     };
                 }
 
-                var isCorrect = await _userManager.CheckPasswordAsync(user, login.Password);
+                var isCorrect = await _authApi.PasswordValidatorAsync(user, login.Password);                    
 
                 if (!isCorrect)
                 {
                     return new LoginResult()
                     {
                         Errors = new List<string>() {
-                                "The password is incorrect. Please try again."
+                                "The password is incorrect. Please try again."//throw
                             },
                         Success = false
                     };
                 }
 
                 var token = await _tokenService.GenerateJwtTokenAsync(user);
-
-                var roles = await _userManager.GetRolesAsync(user);
+               
+                var roles = await _authApi.RolesAsync(user);
 
                 foreach (var role in roles)
                 {
@@ -170,6 +172,7 @@ namespace Auth.Services
                     };
                 }
             }
+
             var errorList = new List<string>();
             foreach (var error in validationResult.Errors)
             {

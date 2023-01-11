@@ -61,6 +61,7 @@ namespace Auth.Api.Controllers
             _tokenValidationParams.ValidateLifetime = false;
             var principal = jwtTokenHandler.ValidateToken(tokenRequest.Token, _tokenValidationParams, out var validatedToken);
             _tokenValidationParams.ValidateLifetime = true;
+
             var response = await _tokenService.VerifyToken(tokenRequest, principal, validatedToken);
 
             return Ok(response);

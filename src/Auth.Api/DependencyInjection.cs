@@ -9,6 +9,7 @@ using Auth.Services.Dtos.Auth;
 using Auth.Services.MapperProfile;
 using Auth.Services.Services;
 using Auth.Services.Validators;
+using Auth.Services.WrapServices;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,14 +27,19 @@ public static class DependencyInjection
         services.AddTransient<AuthService>();
         services.AddTransient<TokenService>();
 
+        services.AddTransient<IAuthApi, AuthApi>();
+        services.AddTransient<ITokenApi , TokenApi>();
+
         services.AddTransient<IUserRepository, UserRepository>();
         services.AddTransient<ITokenRepository, TokenRepository>();
 
         services.AddTransient<UserManager<ApplicationUser>>();
 
         services.AddTransient<GoogleTokenValidator>();
-        services.AddTransient<IValidator<Signup>, SignupValidator>();
+        services.AddTransient<IValidator<GoogleAuth>, GoogleAuthValidator>();
+        services.AddTransient<IValidator<Login>, LoginValidator>();
         services.AddTransient<IValidator<RequestToken>, RequestTokenValidator>();
+        services.AddTransient<IValidator<Signup>, SignupValidator>();
 
         services.AddIdentity<ApplicationUser, ApplicationRole>(o => o.SignIn.RequireConfirmedAccount = true)
          .AddRoles<ApplicationRole>()

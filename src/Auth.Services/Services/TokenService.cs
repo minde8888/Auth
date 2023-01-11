@@ -1,9 +1,9 @@
-﻿using Auth.Domain.Entities;
-using Auth.Domain.Entities.Auth;
+﻿using Auth.Domain.Entities.Auth;
 using Auth.Domain.Exceptions;
 using Auth.Domain.Interfaces;
 using Auth.Services.Dtos.Auth;
 using Auth.Services.Validators;
+using Auth.Services.WrapServices;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -18,26 +18,31 @@ namespace Auth.Services.Services
     public class TokenService
     {
         private readonly ITokenRepository _tokenRepository;
-        private readonly UserManager<ApplicationUser> _userManager;
+       
         private readonly JwtConfig _jwtConfig;
-        private readonly GoogleTokenValidator _googleTokenValidator;
+
+        private readonly GoogleTokenValidator _googleTokenValidator;    
+        private readonly IValidator<GoogleAuth> _googleAuthValidator;
         private readonly IValidator<RequestToken> _requestTokenValidator;
-        private readonly IValidator<GoogleAuth> _googleValidator;
+
+        private readonly ITokenApi _tokenApi;
 
         public TokenService
             (ITokenRepository tokenRepository,
-            UserManager<ApplicationUser> userManager,
             IOptionsMonitor<JwtConfig> jwtConfig,
             GoogleTokenValidator googleTokenValidator,
             IValidator<RequestToken> requestTokenValidator,
-            IValidator<GoogleAuth> googleValidator)
+            IValidator<GoogleAuth> googleAuthValidator,
+            ITokenApi tokenApi)
         {
             _jwtConfig = jwtConfig.CurrentValue;
-            _tokenRepository = tokenRepository ?? throw new ArgumentNullException(nameof(tokenRepository));
-            _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+            _tokenRepository = tokenRepository ?? throw new ArgumentNullException(nameof(tokenRepository));           
+
             _googleTokenValidator = googleTokenValidator ?? throw new ArgumentNullException(nameof(googleTokenValidator));
             _requestTokenValidator = requestTokenValidator ?? throw new ArgumentNullException(nameof(requestTokenValidator));
-            _googleValidator = googleValidator ?? throw new ArgumentNullException(nameof(googleValidator));
+            _googleAuthValidator = googleAuthValidator ?? throw new ArgumentNullException(nameof(googleAuthValidator));
+
+            _tokenApi = tokenApi ?? throw new ArgumentNullException(nameof(tokenApi));
         }
 
         public RefreshToken GetRefreshToken(SecurityToken token, string rand, ApplicationUser user)
@@ -58,7 +63,7 @@ namespace Auth.Services.Services
 
         public async Task<AuthResult> GenerateJwtTokenAsync(ApplicationUser user)
         {
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await _tokenApi.RolesAsync(user);                
 
             var roleClaims = new List<Claim>();
             roles.ToList().ForEach(role =>
@@ -112,8 +117,9 @@ namespace Auth.Services.Services
                 storedRefreshToken.IsUsed = true;
                 await _tokenRepository.Update(storedRefreshToken);
 
-                var dbUser = await _userManager.FindByIdAsync(storedRefreshToken.UserId.ToString());
-                return await GenerateJwtTokenAsync(dbUser);
+                var user = await _tokenApi.FindUserIdAsync(storedRefreshToken.UserId.ToString());
+                
+                return await GenerateJwtTokenAsync(user);
             }
 
             var errorList = new List<string>();
@@ -130,7 +136,7 @@ namespace Auth.Services.Services
 
         private string RandomString(int length)
         {
-            Random rnd = new Random(Guid.NewGuid().GetHashCode());
+            var rnd = new Random(Guid.NewGuid().GetHashCode());
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
             return new string(Enumerable.Repeat(chars, length)
@@ -139,7 +145,7 @@ namespace Auth.Services.Services
 
         public async Task<AuthResult> GetGoogleTokenAsync(GoogleAuth googleAuth)
         {
-            var validationResult = _googleValidator.Validate(googleAuth);
+            var validationResult = _googleAuthValidator.Validate(googleAuth);
             if (validationResult.IsValid)
             {
                 var payload = _googleTokenValidator.VerifyGoogleToken(googleAuth).Result;
@@ -147,7 +153,8 @@ namespace Auth.Services.Services
                     throw new GoogleAuthException();
 
                 var info = new UserLoginInfo(googleAuth.Provider, payload.Subject, googleAuth.Provider);
-                var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+            
+                var user = await _tokenApi.FindUserLoginAsync(info.LoginProvider, info.ProviderKey);
                 if (user == null)
                     throw new GoogleAuthException();
 
