@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace Auth.Services.Validators
 {
-    public class GoogleAuthValidator: AbstractValidator<GoogleAuth>
+    public class GoogleAuthValidator: AbstractValidator<ExternalAuth>
     {
         public GoogleAuthValidator() 
         {

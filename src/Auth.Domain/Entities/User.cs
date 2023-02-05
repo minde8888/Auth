@@ -1,7 +1,8 @@
 ﻿
+
 namespace Auth.Domain.Entities
 {
-    public class SuperAdmin : BaseEntity
+    public class User : BaseUser
     {
     }
 }

@@ -17,7 +17,7 @@ namespace Auth.Data.Context
 
         public DbSet<IdentityUserClaim<Guid>> IdentityUserClaims { get; set; }
         public DbSet<RefreshToken> RefreshToken { get; set; }
-        public DbSet<SuperAdmin> SuperAdmin { get; set; }
+        public DbSet<User> SuperAdmin { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -25,7 +25,7 @@ namespace Auth.Data.Context
 
             builder.HasDefaultSchema("Identity");
 
-            builder.Entity<SuperAdmin>().HasQueryFilter(p => p.IsDeleted == false);
+            builder.Entity<User>().HasQueryFilter(p => p.IsDeleted == false);
         }
     }
 }

@@ -70,9 +70,19 @@ namespace Auth.Api.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("google-login")]
-        public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuth googleAuth)
+        public async Task<IActionResult> GoogleLogin([FromBody] ExternalAuth googleAuth)
         {
-            var response = await _tokenService.GetGoogleTokenAsync(googleAuth);
+            var response = await _tokenService.ValidateGoogleTokenAsync(googleAuth);
+            return Ok(response);
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [HttpPost("facebook-login")]
+        public async Task<IActionResult> FacebookLogin([FromBody] ExternalAuth facebookAuth)
+        {
+            var response = await _tokenService.ValidateFacebookTokenAsync(facebookAuth);
+
             return Ok(response);
         }
     }

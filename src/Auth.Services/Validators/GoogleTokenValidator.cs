@@ -17,7 +17,7 @@ namespace Auth.Services.Validators
             _goolgeConfig = goolgeConfig.CurrentValue;
         }
 
-        public async Task<GoogleJsonWebSignature.Payload> VerifyGoogleToken(GoogleAuth googleAuth)
+        public async Task<GoogleJsonWebSignature.Payload> VerifyExternalToken(ExternalAuth googleAuth)
         {
             var settings = new GoogleJsonWebSignature.ValidationSettings()
             {
@@ -27,32 +27,20 @@ namespace Auth.Services.Validators
 
             if (payload == null)
             {
-                throw new GoogleAuthException();
+                throw new ExternalAuthException();
             }
 
             return payload;
         }
 
-        public AuthResult TokenValidatorAsync(
-            ClaimsPrincipal principal,
-            SecurityToken validatedToken,
-            RefreshToken storedRefreshToken)
+        public AuthResult TokenValidatorAsync(ClaimsPrincipal principal, SecurityToken validatedToken, RefreshToken storedRefreshToken)
         {
-            if (validatedToken is JwtSecurityToken jwtSecurityToken)
+            if (!IsValidJwt(validatedToken))
             {
-                var result = jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase);
-
-                if (result == false)
-                {
-                    return null;
-                }
+                return null;
             }
 
-            var utcExpiryDate = long.Parse(principal.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
-
-            var expDate = UnixTimeStampToDateTime(utcExpiryDate);
-
-            if (expDate < DateTime.UtcNow)
+            if (IsExpired(principal))
             {
                 return new AuthResult()
                 {
@@ -70,7 +58,7 @@ namespace Auth.Services.Validators
                 };
             }
 
-            if (DateTime.UtcNow > storedRefreshToken.ExpiryDate)
+            if (IsRefreshTokenExpired(storedRefreshToken))
             {
                 return new AuthResult()
                 {
@@ -97,9 +85,7 @@ namespace Auth.Services.Validators
                 };
             }
 
-            var jti = principal.Claims.SingleOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
-
-            if (storedRefreshToken.JwtId != jti)
+            if (!IsRefreshTokenValid(principal, storedRefreshToken))
             {
                 return new AuthResult()
                 {
@@ -114,11 +100,35 @@ namespace Auth.Services.Validators
             };
         }
 
+        private bool IsValidJwt(SecurityToken validatedToken)
+        {
+            return validatedToken is JwtSecurityToken jwtSecurityToken &&
+                   jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        private bool IsExpired(ClaimsPrincipal principal)
+        {
+            var utcExpiryDate = long.Parse(principal.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
+            var expDate = UnixTimeStampToDateTime(utcExpiryDate);
+            return expDate < DateTime.UtcNow;
+        }
+
+        private bool IsRefreshTokenExpired(RefreshToken storedRefreshToken)
+        {
+            return DateTime.UtcNow > storedRefreshToken.ExpiryDate;
+        }
+
+        private bool IsRefreshTokenValid(ClaimsPrincipal principal, RefreshToken storedRefreshToken)
+        {
+            var jti = principal.Claims.SingleOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
+            return storedRefreshToken.JwtId == jti;
+        }
+
+
         private DateTime UnixTimeStampToDateTime(double unixTimeStamp)
         {
             DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToUniversalTime();
-            return dtDateTime;
+            return dtDateTime.AddSeconds(unixTimeStamp).ToUniversalTime();
         }
     }
 }

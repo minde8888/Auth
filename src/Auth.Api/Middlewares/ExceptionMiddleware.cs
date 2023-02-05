@@ -1,6 +1,6 @@
+using System.Net;
 using Auth.Domain.Exceptions;
 using Newtonsoft.Json;
-using System.Net;
 
 namespace Auth.Api.Middlewares
 {
@@ -29,65 +29,42 @@ namespace Auth.Api.Middlewares
         {
             context.Response.ContentType = "application/json";
 
-            ApiExceptionResponse error;
-
+            int statusCode;
+            string message;
             switch (exception)
             {
-                case UserExistException badRequestException:
-                    context.Response.StatusCode = StatusCodes.Status404NotFound;
-                    error = new ApiExceptionResponse()
-                    {
-                        Reason = context.Response.StatusCode.ToString(),
-                        Message = badRequestException.Message
-                    };
+                case UserExistException _:
+                    statusCode = (int)HttpStatusCode.NotFound;
+                    message = exception.Message;
                     break;
-
-                case RoleNotExistException badRequestException:
-                    context.Response.StatusCode = StatusCodes.Status404NotFound;
-                    error = new ApiExceptionResponse()
-                    {
-                        Reason = context.Response.StatusCode.ToString(),
-                        Message = badRequestException.Message
-                    };
+                case RoleNotExistException _:
+                    statusCode = (int)HttpStatusCode.NotFound;
+                    message = exception.Message;
                     break;
-
-                case SuperAdminNotExistException badRequestException:
-                    context.Response.StatusCode = StatusCodes.Status404NotFound;
-                    error = new ApiExceptionResponse()
-                    {
-                        Reason = context.Response.StatusCode.ToString(),
-                        Message = badRequestException.Message
-                    };
+                case SuperAdminNotExistException _:
+                    statusCode = (int)HttpStatusCode.NotFound;
+                    message = exception.Message;
                     break;
-
-                case UserNotFoundException responseException:
-                    context.Response.StatusCode = StatusCodes.Status404NotFound;
-                    error = new ApiExceptionResponse()
-                    {
-                        Reason = context.Response.StatusCode.ToString(),
-                        Message = responseException.Message
-                    };
+                case UserNotFoundException _:
+                    statusCode = (int)HttpStatusCode.NotFound;
+                    message = exception.Message;
                     break;
-
-                case GoogleAuthException badRequestException:
-                    context.Response.StatusCode = StatusCodes.Status404NotFound;
-                    error = new ApiExceptionResponse()
-                    {
-                        Reason = context.Response.StatusCode.ToString(),
-                        Message = badRequestException.Message
-                    };
+                case ExternalAuthException _:
+                    statusCode = (int)HttpStatusCode.NotFound;
+                    message = exception.Message;
                     break;
-
                 default:
-                    context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    error = new ApiExceptionResponse()
-                    {
-                        Reason = "InternalServerError",
-                        Message = "Internal server error occurred." + exception
-                    };
+                    statusCode = (int)HttpStatusCode.InternalServerError;
+                    message = "Internal server error occurred.";
                     break;
             }
 
+            var error = new ApiExceptionResponse
+            {
+                Reason = statusCode.ToString(),
+                Message = message
+            };
+            context.Response.StatusCode = statusCode;
             return context.Response.WriteAsync(JsonConvert.SerializeObject(error));
         }
     }

@@ -25,7 +25,7 @@ public static class DependencyInjection
         services.AddAutoMapper(typeof(MapperProfile));
 
         services.AddTransient<AuthService>();
-        services.AddTransient<TokenService>();
+        services.AddTransient<ITokenService,TokenService>();
 
         services.AddTransient<IAuthApi, AuthApi>();
         services.AddTransient<ITokenApi , TokenApi>();
@@ -36,7 +36,7 @@ public static class DependencyInjection
         services.AddTransient<UserManager<ApplicationUser>>();
 
         services.AddTransient<GoogleTokenValidator>();
-        services.AddTransient<IValidator<GoogleAuth>, GoogleAuthValidator>();
+        services.AddTransient<IValidator<ExternalAuth>, GoogleAuthValidator>();
         services.AddTransient<IValidator<Login>, LoginValidator>();
         services.AddTransient<IValidator<RequestToken>, RequestTokenValidator>();
         services.AddTransient<IValidator<Signup>, SignupValidator>();

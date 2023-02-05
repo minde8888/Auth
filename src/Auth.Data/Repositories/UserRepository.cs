@@ -20,9 +20,9 @@ namespace Auth.Data.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<T> GetUser<T>(Guid id) where T : BaseEntity
+        public async Task<T> GetUser<T>(Guid id) where T : BaseUser
         {
-            return await _context.Set<T>().Where(x => x.UserId == id).FirstOrDefaultAsync();
+            return await _context.Set<T>().FirstOrDefaultAsync(x => x.UserId == id);
         }
     }
 }

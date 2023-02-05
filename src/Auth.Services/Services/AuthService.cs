@@ -2,8 +2,6 @@
 using Auth.Domain.Entities.Auth;
 using Auth.Domain.Exceptions;
 using Auth.Domain.Interfaces;
-using Auth.Services.Dtos;
-using Auth.Services.Services;
 using Auth.Services.WrapServices;
 using AutoMapper;
 using FluentValidation;
@@ -15,7 +13,7 @@ namespace Auth.Services
         private readonly IAuthApi _authApi;
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
-        private readonly TokenService _tokenService;
+        private readonly ITokenService _tokenService;
 
         private readonly IValidator<Signup> _signupValidator;
         private readonly IValidator<Login> _loginValidator;
@@ -23,7 +21,7 @@ namespace Auth.Services
         public AuthService(IAuthApi authApi,
             IMapper mapper,
             IUserRepository userRepository,
-            TokenService tokenService,
+            ITokenService tokenService,
             IValidator<Signup> signupValidator,
             IValidator<Login> loginValidator)
         {
@@ -41,21 +39,14 @@ namespace Auth.Services
             var validationResult = await _signupValidator.ValidateAsync(user);
             if (!validationResult.IsValid)
             {
-                var errorList = new List<string>();
-                foreach (var error in validationResult.Errors)
-                {
-                    errorList.Add(error.ErrorMessage);
-                }
                 return new SignupResponse()
                 {
-                    Errors = errorList,
+                    Errors = validationResult.Errors.Select(x => x.ErrorMessage).ToList(),
                     Success = false
                 };
-            };
+            }
 
-            var exist = _authApi.UserExisitAsync(user.PhoneNumber, user.Email);
-
-            if (exist)
+            if (_authApi.UserExisitAsync(user.PhoneNumber, user.Email))
                 throw new UserExistException();
 
             var newUser = new ApplicationUser()
@@ -68,31 +59,7 @@ namespace Auth.Services
 
             var isCreated = await _authApi.CreateUserAsync(newUser, user.Password);
 
-            var result = new SignupResponse();
-
-            if (isCreated.Succeeded)
-            {
-                await _authApi.AddRoleAsync(newUser, user.Roles);
-
-                user.UserId = newUser.Id;
-
-                switch (user.Roles)
-                {
-                    case "SuperAdmin":
-                        var superAdmin = _mapper.Map<SuperAdmin>(user);
-                        if (superAdmin == null)
-                            throw new SuperAdminNotExistException();
-
-                        await _userRepository.AddUserAsync(superAdmin);
-
-                        result.Success = isCreated.Succeeded;
-                        break;
-
-                    default:
-                        throw new RoleNotExistException();
-                }
-            }
-            else
+            if (!isCreated.Succeeded)
             {
                 return new SignupResponse()
                 {
@@ -100,6 +67,25 @@ namespace Auth.Services
                     Success = false
                 };
             }
+
+            await _authApi.AddRoleAsync(newUser, user.Roles);
+
+            user.UserId = newUser.Id;
+
+            switch (user.Roles)
+            {
+                case "SuperAdmin":
+                    var superAdmin = _mapper.Map<SuperAdmin>(user);
+                    if (superAdmin == null)
+                        throw new SuperAdminNotExistException();
+
+                    await _userRepository.AddUserAsync(superAdmin);
+                    break;
+
+                default:
+                    throw new RoleNotExistException();
+            }
+
             return new SignupResponse()
             {
                 Success = isCreated.Succeeded
@@ -109,80 +95,71 @@ namespace Auth.Services
         public async Task<LoginResult> GetUserAsync(Login login, string imageSrc)
         {
             var validationResult = await _loginValidator.ValidateAsync(login);
-            if (validationResult.IsValid)
+
+            if (!validationResult.IsValid)
             {
-                ApplicationUser user = await _authApi.GetUserAsync(login.Email);
-
-                if (user == null || user.IsDeleted)
+                return new LoginResult
                 {
-                    return new LoginResult()
-                    {
-                        Errors = new List<string>() {
-                                "The email address is incorrect. Please retry."//throw
-                            },
-                        Success = false
-                    };
-                }
-                if (user.IsDeleted)
-                {
-                    return new LoginResult()
-                    {
-                        Errors = new List<string>() {
-                                "Signup account was deleted take contact with support"
-                            },
-                        Success = false
-                    };
-                }
+                    Errors = validationResult.Errors.Select(error => error.ErrorMessage).ToList(),
+                    Success = false
+                };
+            }
 
-                var isCorrect = await _authApi.PasswordValidatorAsync(user, login.Password);                    
+            var user = await _authApi.GetUserAsync(login.Email);
 
-                if (!isCorrect)
+            if (user == null)
+            {
+                return new LoginResult
                 {
-                    return new LoginResult()
-                    {
-                        Errors = new List<string>() {
+                    Errors = new List<string> { "The email address is incorrect. Please retry." },
+                    Success = false
+                };
+            }
+
+            if (user.IsDeleted)
+            {
+                return new LoginResult
+                {
+                    Errors = new List<string> { "Signup account was deleted. Please contact support." },
+                    Success = false
+                };
+            }
+
+            var isPasswordValid = await _authApi.PasswordValidatorAsync(user, login.Password);
+
+            if (!isPasswordValid)
+            {
+                return new LoginResult()
+                {
+                    Errors = new List<string>() {
                                 "The password is incorrect. Please try again."//throw
                             },
-                        Success = false
-                    };
-                }
+                    Success = false
+                };
+            }
 
-                var token = await _tokenService.GenerateJwtTokenAsync(user);
-               
-                var roles = await _authApi.RolesAsync(user);
+            var token = await _tokenService.GenerateJwtTokenAsync(user);
+            var roles = await _authApi.RolesAsync(user);
 
-                foreach (var role in roles)
+            var superAdmin = await _userRepository.GetUser<SuperAdmin>(user.Id);
+
+            if (superAdmin == null)
+            {
+                throw new UserNotFoundException();
+            }
+
+            if (roles.Contains("SuperAdmin"))
+            {
+                return new LoginResult
                 {
-                    switch (role)
-                    {
-                        case "SuperAdmin":
-                            var superAdmin = await _userRepository.GetUser<SuperAdmin>(user.Id);
-                            if (superAdmin == null)
-                                throw new UserNotFoundException();
-
-                            return new LoginResult()
-                            {
-                                Token = token.Token,
-                                RefreshToken = token.RefreshToken,
-                                Success = true,
-                                User = _mapper.Map<User>(superAdmin)
-                            };
-                        default:
-                            throw new RoleNotExistException();
-                    };
-                }
+                    Token = token.Token,
+                    RefreshToken = token.RefreshToken,
+                    Success = true,
+                    User = _mapper.Map<UserResponse>(superAdmin)
+                };
             }
 
-            var errorList = new List<string>();
-            foreach (var error in validationResult.Errors)
-            {
-                errorList.Add(error.ErrorMessage);
-            }
-            return new LoginResult()
-            {
-                Errors = errorList,
-                Success = false
-            };
+            throw new RoleNotExistException();
         }
     }
 }

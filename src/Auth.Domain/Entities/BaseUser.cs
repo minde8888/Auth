@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Auth.Domain.Entities
 {
-    public class BaseEntity
+    public class BaseUser
     {
         public Guid Id { get; set; }
         public Guid UserId { get; set; }

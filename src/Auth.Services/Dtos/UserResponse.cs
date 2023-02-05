@@ -1,7 +1,6 @@
-﻿
-namespace Auth.Services.Dtos
+﻿namespace Auth.Domain.Entities
 {
-    public class User
+    public class UserResponse
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
