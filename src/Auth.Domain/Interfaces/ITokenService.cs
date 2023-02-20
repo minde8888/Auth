@@ -11,5 +11,6 @@ namespace Auth.Domain.Interfaces
         public Task<AuthResult> GenerateJwtTokenAsync(ApplicationUser user);
         public Task<AuthResult> VerifyToken(RequestToken tokenRequest, ClaimsPrincipal principal, SecurityToken validatedToken);
         public Task<AuthResult> ValidateGoogleTokenAsync(ExternalAuth googleAuth);
+        public Task<AuthResult> ValidateFacebookTokenAsync(ExternalAuth facebookAuth);
     }
 }

@@ -111,7 +111,7 @@ namespace Auth.Services
             {
                 return new LoginResult
                 {
-                    Errors = new List<string> { "The email address is incorrect. Please retry." },
+                    Errors = new List<string> { "The email was not found." },
                     Success = false
                 };
             }

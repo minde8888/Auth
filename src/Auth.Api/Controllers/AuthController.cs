@@ -1,12 +1,11 @@
 using Auth.Domain.Entities;
 using Auth.Domain.Entities.Auth;
+using Auth.Domain.Interfaces;
 using Auth.Services;
-using Auth.Services.Dtos;
 using Auth.Services.Dtos.Auth;
 using Auth.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,12 +17,12 @@ namespace Auth.Api.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly TokenService _tokenService;
+        private readonly ITokenService _tokenService;
         private readonly AuthService _authService;
         private readonly TokenValidationParameters _tokenValidationParams;
 
         public AuthController(
-            TokenService tokenService,
+            ITokenService tokenService,
             TokenValidationParameters tokenValidationParams,
             AuthService authService)
         {
@@ -44,7 +43,7 @@ namespace Auth.Api.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("Login")]
-        public async Task<IActionResult> Login([FromBody] Login login)
+        public async Task<IActionResult> Login(Login login)
         {
             var imageSrc = $"{Request.Scheme}://{Request.Host}";
             var result = await _authService.GetUserAsync(login, imageSrc);

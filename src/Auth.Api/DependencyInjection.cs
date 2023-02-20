@@ -85,5 +85,15 @@ public static class DependencyInjection
         var connectionString = Environment.GetEnvironmentVariable("DockerCommandsConnectionString");
         services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
+
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(builder =>
+            {
+                builder.WithOrigins("http://localhost:19006")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+            });
+        });
     }
 }
