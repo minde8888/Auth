@@ -1,3 +1,4 @@
+using Auth.Api;
 using Auth.Api.Middlewares;
 using Auth.Data.Configuration;
 using Auth.Data.Context;

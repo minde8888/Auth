@@ -3,7 +3,6 @@ using Auth.Domain.Entities.Auth;
 using Auth.Domain.Interfaces;
 using Auth.Services;
 using Auth.Services.Dtos.Auth;
-using Auth.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
