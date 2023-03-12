@@ -23,6 +23,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
 using (var serviceScope = app.Services.CreateScope())
 {
     var loggerFactory = serviceScope.ServiceProvider.GetService<ILoggerFactory>();
@@ -43,7 +48,7 @@ using (var serviceScope = app.Services.CreateScope())
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseRouting();
 

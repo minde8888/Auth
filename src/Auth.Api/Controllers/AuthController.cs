@@ -32,7 +32,7 @@ namespace Auth.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost]
-        [Route("Signup")]
+        [Route("signup")]
         public async Task<IActionResult> Signup([FromBody] Signup user)
         {
             var result = await _authService.CreateUserAsync(user);
@@ -41,7 +41,7 @@ namespace Auth.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost]
-        [Route("Login")]
+        [Route("login")]
         public async Task<IActionResult> Login(Login login)
         {
             var imageSrc = $"{Request.Scheme}://{Request.Host}";
@@ -51,7 +51,7 @@ namespace Auth.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost]
-        [Route("RefreshToken")]
+        [Route("refreshToken")]
         public async Task<IActionResult> RefreshToken([FromBody] RequestToken tokenRequest)
         {
             JwtSecurityTokenHandler jwtTokenHandler = new();
@@ -76,7 +76,7 @@ namespace Auth.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost]
-        [HttpPost("facebook-login")]
+        [Route("facebook-login")]
         public async Task<IActionResult> FacebookLogin([FromBody] ExternalAuth facebookAuth)
         {
             var response = await _tokenService.ValidateFacebookTokenAsync(facebookAuth);

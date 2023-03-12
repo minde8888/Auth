@@ -172,7 +172,7 @@ namespace Auth.Services.Services
                     Success = false
                 };
             }
-
+            var a = _googleTokenValidator.VerifyExternalToken(googleAuth);
             var payload = _googleTokenValidator.VerifyExternalToken(googleAuth).Result;
             if (payload == null)
                 throw new ExternalAuthException();

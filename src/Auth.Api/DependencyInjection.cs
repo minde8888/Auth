@@ -97,7 +97,7 @@ namespace Auth.Api
             {
                 options.AddDefaultPolicy(builder =>
                 {
-                    builder.WithOrigins("http://192.168.0.182:9002")
+                    builder.WithOrigins("http://192.168.0.182:9002", "https://192.168.0.182:9002")
                         .AllowAnyMethod()
                         .AllowAnyHeader();
                 });
