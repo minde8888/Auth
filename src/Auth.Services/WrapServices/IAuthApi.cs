@@ -7,6 +7,7 @@ namespace Auth.Services.WrapServices
     {
         bool UserExisitAsync(string phoneNumber, string email);
         Task<IdentityResult> CreateUserAsync(ApplicationUser user, string password);
+        Task<IdentityResult> CreateBasicUser(ApplicationUser user);
         Task AddRoleAsync(ApplicationUser user, string role);
         Task<ApplicationUser> GetUserAsync(string email);
         Task<bool> PasswordValidatorAsync(ApplicationUser user, string password);

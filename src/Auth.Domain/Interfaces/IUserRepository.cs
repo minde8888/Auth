@@ -1,5 +1,6 @@
 ﻿
 using Auth.Domain.Entities;
+using Auth.Domain.Entities.Auth;
 
 namespace Auth.Domain.Interfaces
 {
@@ -7,5 +8,6 @@ namespace Auth.Domain.Interfaces
     {
         Task AddUserAsync<T>(T t);
         Task<T> GetUser<T>(Guid id) where T : BaseUser;
+        Task<ApplicationUser> GetUserByEmail(string email);
     }
 }

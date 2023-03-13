@@ -83,5 +83,14 @@ namespace Auth.Api.Controllers
 
             return Ok(response);
         }
+
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("test")]
+        public IActionResult Result() 
+        {
+            return Ok("result");
+        }
+
     }
 }

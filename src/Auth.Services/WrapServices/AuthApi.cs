@@ -1,4 +1,5 @@
-﻿using Auth.Domain.Entities.Auth;
+﻿using Auth.Domain.Entities;
+using Auth.Domain.Entities.Auth;
 using Microsoft.AspNetCore.Identity;
 
 namespace Auth.Services.WrapServices
@@ -20,6 +21,11 @@ namespace Auth.Services.WrapServices
         public async Task<IdentityResult> CreateUserAsync(ApplicationUser user, string password)
         {
             return await _userManager.CreateAsync(user, password);
+        }
+
+        public async Task<IdentityResult> CreateBasicUser(ApplicationUser user)
+        {
+            return await _userManager.CreateAsync(user);
         }
 
         public async Task AddRoleAsync(ApplicationUser user, string role)
