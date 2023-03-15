@@ -55,7 +55,7 @@ namespace Auth.Api.Middlewares
                     break;
                 default:
                     statusCode = (int)HttpStatusCode.InternalServerError;
-                    message = "Internal server error occurred.";
+                    message = "Internal server error occurred."+ exception;
                     break;
             }
 

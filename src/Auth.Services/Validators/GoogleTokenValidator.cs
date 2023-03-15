@@ -25,12 +25,7 @@ namespace Auth.Services.Validators
             };
             var payload = await GoogleJsonWebSignature.ValidateAsync(googleAuth.IdToken, settings);
 
-            if (payload == null)
-            {
-                throw new ExternalAuthException();
-            }
-
-            return payload;
+            return payload ?? throw new ExternalAuthException();
         }
 
         public AuthResult TokenValidatorAsync(ClaimsPrincipal principal, SecurityToken validatedToken, RefreshToken storedRefreshToken)

@@ -5,10 +5,8 @@ using Auth.Domain.Interfaces;
 using Auth.Services.Dtos.Auth;
 using Auth.Services.Validators;
 using Auth.Services.WrapServices;
-using Azure.Core;
 using FluentValidation;
 using Google.Apis.Auth;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -165,23 +163,13 @@ namespace Auth.Services.Services
 
         public async Task<User> ValidateGoogleTokenAsync(ExternalAuth googleAuth)
         {
-            if (googleAuth.Provider == "google.com")
-            {
+            if (googleAuth.Provider != "google.com")
                 throw new ExternalAuthException();
-            }
-            var payload = await GoogleJsonWebSignature.ValidateAsync(googleAuth.IdToken);
 
-            if (payload == null)
-            {
+            var payload = await GoogleJsonWebSignature.ValidateAsync(googleAuth.IdToken) ?? throw new ExternalAuthException();
+
+            if (string.IsNullOrEmpty(payload.Email))
                 throw new ExternalAuthException();
-            }
-
-            var email = payload.Email;
-
-            if (string.IsNullOrEmpty(email))
-            {
-                throw new ExternalAuthException();
-            }
 
             var user = await _userRepository.GetUserByEmail(payload.Email);
 
@@ -191,11 +179,14 @@ namespace Auth.Services.Services
                 {
                     Roles = "Basic",
                     Email = payload.Email,
-                    UserName = payload.Name
+                    UserName = payload.GivenName 
                 };
+                var isCreated = _authApi.CreateBasicUser(user);
+                if (!isCreated.Result.Succeeded)
+                    throw new ExternalAuthException();
             }
-            var isCreated = _authApi.CreateBasicUser(user);
-         
+
+
             await _authApi.AddRoleAsync(user, user.Roles);
             var jwtToken = GenerateJwtTokenAsync(user);
             return null;
@@ -212,7 +203,7 @@ namespace Auth.Services.Services
 
             var data = JsonSerializer.Deserialize<Dictionary<string, string>>(response.Content!);
             var facebookId = new Guid(data!["id"]);
-            var name = data["name"];
+            var  name = data["name"];
 
             var account = _userRepository.GetUser<User>(facebookId);
             //_context.BaseUser.FirstOrDefault(x => x.FacebookId == facebookId);
