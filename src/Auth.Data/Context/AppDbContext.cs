@@ -17,7 +17,6 @@ namespace Auth.Data.Context
 
         public DbSet<IdentityUserClaim<Guid>> IdentityUserClaims { get; set; }
         public DbSet<RefreshToken> RefreshToken { get; set; }
-        public DbSet<User> SuperAdmin { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

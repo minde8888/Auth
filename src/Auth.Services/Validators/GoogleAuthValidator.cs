@@ -9,7 +9,7 @@ namespace Auth.Services.Validators
         {
             RuleFor(x => x.Provider).NotNull().NotEmpty()
                 .WithMessage("Provider is empty");
-            RuleFor(x => x.IdToken).NotNull().NotEmpty()
+            RuleFor(x => x.AccessToken).NotNull().NotEmpty()
                 .WithMessage("Google token is empty");
         }
     }

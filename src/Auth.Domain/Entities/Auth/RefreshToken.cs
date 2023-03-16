@@ -17,7 +17,6 @@ namespace Auth.Domain.Entities.Auth
 
         [ForeignKey(nameof(UserId))]
         public ApplicationUser ApplicationUser { get; set; }
-
         public DateTime? Revoked { get; set; }
         public bool IsActive => Revoked == null && !IsExpired;
     }

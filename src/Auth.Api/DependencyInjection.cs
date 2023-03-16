@@ -28,6 +28,7 @@ namespace Auth.Api
 
             services.AddTransient<AuthService>();
             services.AddTransient<ITokenService, TokenService>();
+            services.AddTransient<IExternAuthService, ExternAuthService>();
 
             services.AddTransient<IAuthApi, AuthApi>();
             services.AddTransient<ITokenApi, TokenApi>();
@@ -37,7 +38,6 @@ namespace Auth.Api
 
             services.AddTransient<UserManager<ApplicationUser>>();
 
-            services.AddTransient<GoogleTokenValidator>();
             services.AddTransient<IValidator<ExternalAuth>, GoogleAuthValidator>();
             services.AddTransient<IValidator<Login>, LoginValidator>();
             services.AddTransient<IValidator<RequestToken>, RequestTokenValidator>();

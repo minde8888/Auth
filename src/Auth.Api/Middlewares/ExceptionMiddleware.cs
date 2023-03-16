@@ -41,10 +41,6 @@ namespace Auth.Api.Middlewares
                     statusCode = (int)HttpStatusCode.NotFound;
                     message = exception.Message;
                     break;
-                case SuperAdminNotExistException _:
-                    statusCode = (int)HttpStatusCode.NotFound;
-                    message = exception.Message;
-                    break;
                 case UserNotFoundException _:
                     statusCode = (int)HttpStatusCode.NotFound;
                     message = exception.Message;
@@ -55,7 +51,7 @@ namespace Auth.Api.Middlewares
                     break;
                 default:
                     statusCode = (int)HttpStatusCode.InternalServerError;
-                    message = "Internal server error occurred."+ exception;
+                    message = "Internal server error occurred.";
                     break;
             }
 

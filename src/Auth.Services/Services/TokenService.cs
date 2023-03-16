@@ -1,12 +1,8 @@
-﻿using Auth.Domain.Entities;
-using Auth.Domain.Entities.Auth;
-using Auth.Domain.Exceptions;
+﻿using Auth.Domain.Entities.Auth;
 using Auth.Domain.Interfaces;
 using Auth.Services.Dtos.Auth;
-using Auth.Services.Validators;
 using Auth.Services.WrapServices;
 using FluentValidation;
-using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -14,41 +10,32 @@ using RestSharp;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Text.Json;
 
 namespace Auth.Services.Services
 {
     public class TokenService : ITokenService
     {
         private readonly ITokenRepository _tokenRepository;
-        private readonly IUserRepository _userRepository;
 
         private readonly JwtConfig _jwtConfig;
 
-        private readonly GoogleTokenValidator _googleTokenValidator;
         private readonly IValidator<RequestToken> _requestTokenValidator;
 
         private readonly ITokenApi _tokenApi;
-        private readonly IAuthApi _authApi;
 
         public TokenService
             (ITokenRepository tokenRepository,
-            IUserRepository userRepository,
             IOptionsMonitor<JwtConfig> jwtConfig,
-            GoogleTokenValidator googleTokenValidator,
             IValidator<RequestToken> requestTokenValidator,
-            ITokenApi tokenApi,
-            IAuthApi authApi)
+            ITokenApi tokenApi)
         {
             _jwtConfig = jwtConfig.CurrentValue;
             _tokenRepository = tokenRepository ?? throw new ArgumentNullException(nameof(tokenRepository));
-            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
 
-            _googleTokenValidator = googleTokenValidator ?? throw new ArgumentNullException(nameof(googleTokenValidator));
             _requestTokenValidator = requestTokenValidator ?? throw new ArgumentNullException(nameof(requestTokenValidator));
 
             _tokenApi = tokenApi ?? throw new ArgumentNullException(nameof(tokenApi));
-            _authApi = authApi ?? throw new ArgumentNullException(nameof(authApi));
+          
         }
 
         public RefreshToken GetRefreshToken(SecurityToken token, string rand, ApplicationUser user)
@@ -143,81 +130,12 @@ namespace Auth.Services.Services
                 };
             }
 
-            var googleTokenValidationResult = _googleTokenValidator.TokenValidatorAsync(principal, validatedToken, storedRefreshToken);
-            if (!googleTokenValidationResult.Success)
-            {
-                return new AuthResult
-                {
-                    Success = false,
-                    Errors = new List<string> { "Invalid Google token." }
-                };
-            }
-
             storedRefreshToken.IsUsed = true;
             await _tokenRepository.Update(storedRefreshToken);
 
             var user = await _tokenApi.FindUserIdAsync(storedRefreshToken.UserId.ToString());
 
             return await GenerateJwtTokenAsync(user);
-        }
-
-        public async Task<User> ValidateGoogleTokenAsync(ExternalAuth googleAuth)
-        {
-            if (googleAuth.Provider != "google.com")
-                throw new ExternalAuthException();
-
-            var payload = await GoogleJsonWebSignature.ValidateAsync(googleAuth.IdToken) ?? throw new ExternalAuthException();
-
-            if (string.IsNullOrEmpty(payload.Email))
-                throw new ExternalAuthException();
-
-            var user = await _userRepository.GetUserByEmail(payload.Email);
-
-            if (user == null)
-            {
-                user = new ApplicationUser()
-                {
-                    Roles = "Basic",
-                    Email = payload.Email,
-                    UserName = payload.GivenName 
-                };
-                var isCreated = _authApi.CreateBasicUser(user);
-                if (!isCreated.Result.Succeeded)
-                    throw new ExternalAuthException();
-            }
-
-
-            await _authApi.AddRoleAsync(user, user.Roles);
-            var jwtToken = GenerateJwtTokenAsync(user);
-            return null;
-        }
-
-        public async Task<AuthResult> ValidateFacebookTokenAsync(ExternalAuth facebookAuth)
-        {
-            var client = new RestClient("https://graph.facebook.com/v8.0");
-            var request = new RestRequest($"me?access_token={facebookAuth.AccessToken}");
-            var response = await client.GetAsync(request);
-
-            if (!response.IsSuccessful)
-                throw new ExternalAuthException();
-
-            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(response.Content!);
-            var facebookId = new Guid(data!["id"]);
-            var  name = data["name"];
-
-            var account = _userRepository.GetUser<User>(facebookId);
-            //_context.BaseUser.FirstOrDefault(x => x.FacebookId == facebookId);
-
-            // create new account if first time logging in
-            //if (account == null)
-            //{
-
-            //    _userRepository.AddUserAsync<User>();
-            //}
-
-            //var token = GenerateJwtTokenAsync(account);
-
-            return null;
         }
     }
 }

@@ -18,16 +18,19 @@ namespace Auth.Api.Controllers
     {
         private readonly ITokenService _tokenService;
         private readonly AuthService _authService;
+        private readonly IExternAuthService _externAuthService;
         private readonly TokenValidationParameters _tokenValidationParams;
 
         public AuthController(
             ITokenService tokenService,
-            TokenValidationParameters tokenValidationParams,
-            AuthService authService)
+            AuthService authService,
+            IExternAuthService externAuthService,
+            TokenValidationParameters tokenValidationParams)
         {
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-            _tokenValidationParams = tokenValidationParams ?? throw new ArgumentNullException(nameof(tokenValidationParams));
+            _externAuthService = externAuthService ?? throw new ArgumentNullException(nameof(externAuthService));
+            _tokenValidationParams = tokenValidationParams ?? throw new ArgumentNullException(nameof(tokenValidationParams));       
         }
 
         [AllowAnonymous]
@@ -44,8 +47,7 @@ namespace Auth.Api.Controllers
         [Route("login")]
         public async Task<IActionResult> Login(Login login)
         {
-            var imageSrc = $"{Request.Scheme}://{Request.Host}";
-            var result = await _authService.GetUserAsync(login, imageSrc);
+            var result = await _authService.GetUserAsync(login);
             return Ok(result);
         }
 
@@ -70,7 +72,7 @@ namespace Auth.Api.Controllers
         [Route("google-login")]
         public async Task<IActionResult> GoogleLogin([FromBody] ExternalAuth googleAuth)
         {
-            var response = await _tokenService.ValidateGoogleTokenAsync(googleAuth);
+            var response = await _externAuthService.GoogleAuth(googleAuth);
             return Ok(response);
         }
 
@@ -79,18 +81,8 @@ namespace Auth.Api.Controllers
         [Route("facebook-login")]
         public async Task<IActionResult> FacebookLogin([FromBody] ExternalAuth facebookAuth)
         {
-            var response = await _tokenService.ValidateFacebookTokenAsync(facebookAuth);
-
+            var response = await _externAuthService.FacebookAuth(facebookAuth);
             return Ok(response);
         }
-
-        [AllowAnonymous]
-        [HttpGet]
-        [Route("test")]
-        public IActionResult Result() 
-        {
-            return Ok("result");
-        }
-
     }
 }
