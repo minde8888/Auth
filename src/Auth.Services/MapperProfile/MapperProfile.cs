@@ -7,8 +7,7 @@ namespace Auth.Services.MapperProfile
     {
         public MapperProfile()
         {
-            CreateMap<SuperAdmin, Signup>().ReverseMap();
-            CreateMap<SuperAdmin, UserResponse>().ReverseMap();
+
         }
     }
 }

@@ -39,7 +39,7 @@ namespace Auth.Services.Services
                 };
             }
 
-            if (googleAuth.Provider != ProviderType.Google)
+            if (googleAuth.Provider != "google.com")
                 throw new ExternalAuthException();
 
             var payload = await GoogleJsonWebSignature.ValidateAsync(googleAuth.AccessToken) ?? throw new ExternalAuthException();
