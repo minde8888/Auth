@@ -5,6 +5,5 @@ namespace Auth.Domain.Interfaces
     public interface IExternAuthService
     {
         Task<AuthResult> GoogleAuth(ExternalAuth googleAuth);
-        Task<AuthResult> FacebookAuth(ExternalAuth facebookAuth);
     }
 }

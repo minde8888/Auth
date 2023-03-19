@@ -68,33 +68,5 @@ namespace Auth.Services.Services
 
             return await _tokenService.GenerateJwtTokenAsync(user);
         }
-
-        public async Task<AuthResult> FacebookAuth(ExternalAuth facebookAuth)
-        {
-            var client = new RestClient("https://graph.facebook.com/v8.0");
-            var request = new RestRequest($"me?access_token={facebookAuth.AccessToken}");
-            var response = await client.GetAsync(request);
-
-            if (!response.IsSuccessful)
-                throw new ExternalAuthException();
-
-            //var data = JsonSerializer.Deserialize<Dictionary<string, string>>(response.Content!);
-            //var facebookId = new Guid(data!["id"]);
-            //var name = data["name"];
-
-            //var account = _userRepository.GetUser<User>(facebookId);
-            //_context.BaseUser.FirstOrDefault(x => x.FacebookId == facebookId);
-
-            //create new account if first time logging in
-            //if (account == null)
-            //{
-
-            //    _userRepository.AddUserAsync<User>();
-            //}
-
-            //var token = GenerateJwtTokenAsync(account);
-
-            return null;
-        }
     }
 }

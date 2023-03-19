@@ -75,14 +75,5 @@ namespace Auth.Api.Controllers
             var response = await _externAuthService.GoogleAuth(googleAuth);
             return Ok(response);
         }
-
-        [AllowAnonymous]
-        [HttpPost]
-        [Route("facebook-login")]
-        public async Task<IActionResult> FacebookLogin([FromBody] ExternalAuth facebookAuth)
-        {
-            var response = await _externAuthService.FacebookAuth(facebookAuth);
-            return Ok(response);
-        }
     }
 }
