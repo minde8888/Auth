@@ -11,23 +11,17 @@ namespace Auth.Services
     public class AuthService
     {
         private readonly IAuthApi _authApi;
-        private readonly IMapper _mapper;
-        private readonly IUserRepository _userRepository;
         private readonly ITokenService _tokenService;
 
         private readonly IValidator<Signup> _signupValidator;
         private readonly IValidator<Login> _loginValidator;
 
         public AuthService(IAuthApi authApi,
-            IMapper mapper,
-            IUserRepository userRepository,
             ITokenService tokenService,
             IValidator<Signup> signupValidator,
             IValidator<Login> loginValidator)
         {
             _authApi = authApi ?? throw new ArgumentNullException(nameof(authApi));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
 
             _signupValidator = signupValidator ?? throw new ArgumentNullException(nameof(signupValidator));
@@ -57,13 +51,13 @@ namespace Auth.Services
                 PhoneNumber = user.PhoneNumber
             };
 
-            var isCreated = await _authApi.CreateUserAsync(newUser, user.Password);
+            var result = await _authApi.CreateUserAsync(newUser, user.Password);
 
-            if (!isCreated.Succeeded)
+            if (!result.Succeeded)
             {
                 return new SignupResponse()
                 {
-                    Errors = isCreated.Errors.Select(x => x.Description).ToList(),
+                    Errors = result.Errors.Select(x => x.Description).ToList(),
                     Success = false
                 };
             }
@@ -72,7 +66,7 @@ namespace Auth.Services
 
             return new SignupResponse()
             {
-                Success = isCreated.Succeeded
+                Success = result.Succeeded
             };
         }
 

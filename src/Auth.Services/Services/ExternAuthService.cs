@@ -4,7 +4,6 @@ using Google.Apis.Auth;
 using Auth.Services.WrapServices;
 using Auth.Domain.Interfaces;
 using FluentValidation;
-using RestSharp;
 
 namespace Auth.Services.Services
 {
