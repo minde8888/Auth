@@ -7,10 +7,14 @@ namespace Auth.Services.Validators
     {
         public RequestTokenValidator()
         {
-            RuleFor(x => x.Token).NotNull().NotEmpty()
-               .WithMessage("Token is empty");
-            RuleFor(x => x.RefreshToken).NotNull().NotEmpty()
-                .WithMessage("RefreshToken is empty");
+            RuleFor(x => x.Token)
+                .NotNull().WithMessage("Token cannot be null")
+                .NotEmpty().WithMessage("Token cannot be empty");
+
+            RuleFor(x => x.RefreshToken)
+                .NotNull().WithMessage("RefreshToken cannot be null")
+                .NotEmpty().WithMessage("RefreshToken cannot be empty");
         }
     }
+
 }

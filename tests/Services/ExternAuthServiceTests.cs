@@ -1,14 +1,7 @@
-﻿using Auth.Domain.Entities;
-using Auth.Domain.Interfaces;
+﻿using Auth.Domain.Interfaces;
 using Auth.Services.WrapServices;
-using Auth.Services;
 using FluentValidation;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Auth.Domain.Exceptions;
 using Auth.Domain.Entities.Auth;
 using AutoFixture.Xunit2;
@@ -49,7 +42,7 @@ namespace tests.Services
         }
 
         [Fact]
-        public async Task GoogleAuth_ThrowsExceptions()
+        public async Task GoogleAuth_DidNotGetData_ExternalAuthExceptions()
         {
             // Arrange
             var googleAuth = new ExternalAuth

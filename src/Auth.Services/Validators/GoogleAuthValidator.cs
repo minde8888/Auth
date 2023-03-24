@@ -5,12 +5,16 @@ namespace Auth.Services.Validators
 {
     public class GoogleAuthValidator: AbstractValidator<ExternalAuth>
     {
-        public GoogleAuthValidator() 
+        public GoogleAuthValidator()
         {
-            RuleFor(x => x.Provider).NotNull().NotEmpty()
-                .WithMessage("Provider is empty");
-            RuleFor(x => x.AccessToken).NotNull().NotEmpty()
-                .WithMessage("Google token is empty");
+            RuleFor(x => x.Provider)
+                .NotEmpty().WithMessage("Provider is empty")
+                .NotNull().WithMessage("Provider is required");
+
+            RuleFor(x => x.AccessToken)
+                .NotEmpty().WithMessage("Google token is empty")
+                .NotNull().WithMessage("Google token is required");
         }
+
     }
 }
