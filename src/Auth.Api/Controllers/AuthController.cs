@@ -47,7 +47,7 @@ namespace Auth.Api.Controllers
         [Route("login")]
         public async Task<IActionResult> Login(Login login)
         {
-            var result = await _authService.GetUserAsync(login);
+            var result = await _authService.AuthAsync(login);
             return Ok(result);
         }
 

@@ -3,7 +3,6 @@ using Auth.Domain.Entities.Auth;
 using Auth.Domain.Exceptions;
 using Auth.Domain.Interfaces;
 using Auth.Services.WrapServices;
-using AutoMapper;
 using FluentValidation;
 
 namespace Auth.Services
@@ -70,7 +69,7 @@ namespace Auth.Services
             };
         }
 
-        public async Task<AuthResult> GetUserAsync(Login login)
+        public async Task<AuthResult> AuthAsync(Login login)
         {
             var validationResult = await _loginValidator.ValidateAsync(login);
 
@@ -83,10 +82,7 @@ namespace Auth.Services
                 };
             }
 
-            var user = await _authApi.GetUserAsync(login.Email);
-
-            if (user == null)
-                throw new UserNotFoundException();
+            var user = await _authApi.AuthUserAsync(login.Email) ?? throw new UserNotFoundException();
 
             if (user.IsDeleted)
                 throw new UserNotFoundException();

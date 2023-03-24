@@ -1,11 +1,10 @@
 ﻿using Auth.Domain.Entities;
 using Auth.Domain.Entities.Auth;
+using Auth.Domain.Exceptions;
 using Auth.Domain.Interfaces;
 using Auth.Services;
-using Auth.Services.MapperProfile;
 using Auth.Services.WrapServices;
 using AutoFixture.Xunit2;
-using AutoMapper;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Moq;
@@ -37,6 +36,19 @@ namespace tests.Services
                 _loginValidator);
         }
 
+        [Fact]
+        public void UselCreate_DidNotGetData_UserExistExceptionn()
+        {
+            //result 
+            Assert.ThrowsAsync<UserExistException>(async () => await _authService.CreateUserAsync(null));
+        }
+
+        [Fact]
+        public void UserLogin_DidNotGetData_EmployeeNotFoundException()
+        {
+            //result 
+            Assert.ThrowsAsync<UserNotFoundException>(async () => await _authService.AuthAsync(null));
+        }
 
         [Fact]
         public async Task AddUser_GivenUserObject_ReturnsResult()
@@ -51,7 +63,7 @@ namespace tests.Services
                 Password = "Secret!123",
                 Roles = "user"
             };
-            _loginValidator.RuleFor(x => x.Email).Must(Email => true);
+    
             _authApiMock.Setup(x => x.UserExisitAsync(user.PhoneNumber, user.Email)).Returns(false);
             _authApiMock.Setup(x => x.CreateUserAsync(It.IsAny<ApplicationUser>(), user.Password)).ReturnsAsync(IdentityResult.Success);
             _authApiMock.Setup(x => x.AddRoleAsync(It.IsAny<ApplicationUser>(), user.Roles))
@@ -65,6 +77,36 @@ namespace tests.Services
             _authApiMock.Verify(x => x.CreateUserAsync(It.IsAny<ApplicationUser>(), user.Password), Times.Once);
             _authApiMock.Verify(x => x.AddRoleAsync(It.IsAny<ApplicationUser>(), user.Roles), Times.Once);
             Assert.True(result.Success);
+        }
+
+        [Theory, AutoData]
+        public async Task AuthAsync_GivenUserObject_ReturnsResult( AuthResult auth)
+        {
+            // Arrange
+            var login = new Login()
+            {
+                Email = "test@tesxt.com",
+                Password = "SuperStrongPasword3!"
+            };
+
+            _authApiMock.Setup(x => x.AuthUserAsync(login.Email))
+                .ReturnsAsync(new ApplicationUser());
+
+            _authApiMock.Setup(x => x.PasswordValidatorAsync(It.IsAny<ApplicationUser>(), login.Password))
+                .ReturnsAsync(true);
+
+            _tokenServiceMock.Setup(x => x.GenerateJwtTokenAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(auth);
+
+            // Act
+            var result = await _authService.AuthAsync(login);
+
+            // Assert   
+            _authApiMock.Verify(x => x.AuthUserAsync(login.Email), Times.Once);
+            _authApiMock.Verify(x => x.PasswordValidatorAsync(It.IsAny<ApplicationUser>(), login.Password), Times.Once);
+            _tokenServiceMock.Verify(x => x.GenerateJwtTokenAsync(It.IsAny<ApplicationUser>()), Times.Once);
+            Assert.Equal(auth, result);
+
         }
     }
 }

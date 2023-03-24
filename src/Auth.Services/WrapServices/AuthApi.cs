@@ -1,5 +1,4 @@
-﻿using Auth.Domain.Entities;
-using Auth.Domain.Entities.Auth;
+﻿using Auth.Domain.Entities.Auth;
 using Microsoft.AspNetCore.Identity;
 
 namespace Auth.Services.WrapServices
@@ -33,7 +32,7 @@ namespace Auth.Services.WrapServices
             await _userManager.AddToRoleAsync(user, role);
         }
 
-        public async Task<ApplicationUser> GetUserAsync(string email)
+        public async Task<ApplicationUser> AuthUserAsync(string email)
         {
             return await _userManager.FindByEmailAsync(email);
         }
