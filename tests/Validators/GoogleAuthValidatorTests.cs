@@ -2,7 +2,7 @@
 using Auth.Services.Validators;
 using FluentValidation.TestHelper;
 
-namespace YourApp.Tests.Validators
+namespace tests.Validators
 {
     public class GoogleAuthValidatorTests
     {

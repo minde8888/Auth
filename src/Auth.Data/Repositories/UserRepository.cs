@@ -21,11 +21,6 @@ namespace Auth.Data.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<T> GetUser<T>(Guid id) where T : BaseUser
-        {
-            return await _context.Set<T>().FirstOrDefaultAsync(x => x.UserId == id);
-        }
-
         public async Task<ApplicationUser> GetUserByEmail(string email)
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
