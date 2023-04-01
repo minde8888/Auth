@@ -32,6 +32,7 @@ namespace Auth.Api
 
             services.AddTransient<IAuthApi, AuthApi>();
             services.AddTransient<ITokenApi, TokenApi>();
+            services.AddTransient<IExternAuth, ExternAuth>();
 
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<ITokenRepository, TokenRepository>();

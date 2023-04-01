@@ -45,8 +45,8 @@ namespace Auth.Api.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("login")]
-        public async Task<IActionResult> Login(Login login)
-        {
+        public async Task<IActionResult> Login([FromBody] Login login)
+         {
             var result = await _authService.AuthAsync(login);
             return Ok(result);
         }
