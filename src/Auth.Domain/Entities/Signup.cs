@@ -10,7 +10,7 @@ namespace Auth.Domain.Entities
         [Required(ErrorMessage = "User Surname is required")]
         public string Surname { get; set; }
         [Required(ErrorMessage = "User PhoneNumber is required")]
-        [RegularExpression(@"^(\\+)?\d{8,}$", ErrorMessage = "The PhoneNumber field is not a valid phone number")]
+        [RegularExpression(@"^(\\+)?\d{8}$", ErrorMessage = "The PhoneNumber field must be an 8-digit phone number")]
         public string PhoneNumber { get; set; }
 
         [EmailAddress]
