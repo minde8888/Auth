@@ -7,26 +7,36 @@ services:
       context: .
       dockerfile: src/Auth.Api/Dockerfile
     ports:
-        - "9001:80"
-        - "9002:443"
+      - "9001:80"
+      - "9002:443"
     depends_on:
-      - "postgresql_database"
+      - postgresql_database
     environment:
-      DockerCommandsConnectionString: "host=postgresql_database; username=postgres; Password=admin; Server=postgres; Database=DB; port=5432;"
+      DockerCommandsConnectionString: "host=postgresql_database; username=postgres; password=admin; server=postgres; database=DB; port=5432;"
 
   postgresql_database:
     restart: always
     image: postgres:15.1-alpine3.17
-    container_name: 'postgres'
+    container_name: postgres
     ports:
       - "5433:5432"
     environment:
-      - POSTGRES_DB=DB
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=admin
-
+      POSTGRES_DB: DB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
     volumes:
       - ./database-data:/var/lib/postgresql/data/
+
+  rnauthapp:
+    image: rnauthapp
+    build:
+      context: ../../React/RN_Auth_App
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ../../React/RN_Auth_App:/RN_AUTH_APP
+    command: sh -c "yarn install && yarn start"
 
 volumes:
   database-data:
