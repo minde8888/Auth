@@ -16,5 +16,4 @@ namespace Auth.Services.Validators
                 .NotEmpty().WithMessage("RefreshToken cannot be empty");
         }
     }
-
 }
