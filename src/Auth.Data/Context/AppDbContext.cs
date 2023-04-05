@@ -23,8 +23,6 @@ namespace Auth.Data.Context
             base.OnModelCreating(builder);
 
             builder.HasDefaultSchema("Identity");
-
-            builder.Entity<User>().HasQueryFilter(p => p.IsDeleted == false);
         }
     }
 }
